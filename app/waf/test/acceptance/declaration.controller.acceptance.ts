@@ -1,3 +1,19 @@
+/**
+ * Copyright 2019 F5 Networks, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import {Client, expect, sinon} from '@loopback/testlab';
 import {WafApplication} from '../..';
 import {ApplicationController} from '../../src/controllers';
@@ -36,7 +52,7 @@ import {
 } from '../fixtures/controllers/mocks/mock.openstack.controller';
 import {
   ASGShouldResponseWith,
-  ASGController,
+  MockASGController,
 } from '../fixtures/controllers/mocks/mock.asg.controller';
 import {StubResponses} from '../fixtures/datasources/testrest.datasource';
 
@@ -62,7 +78,7 @@ describe('DeclarationController', () => {
     mockASG = await (async () => {
       let {restApp} = await setupRestAppAndClient(
         RestApplicationPort.ASG,
-        ASGController,
+        MockASGController,
         'https',
       );
       return restApp;
@@ -81,7 +97,7 @@ describe('DeclarationController', () => {
 
   beforeEach('Empty database', async () => {
     await givenEmptyDatabase(wafapp);
-    deployStub = sinon.stub(controller.as3Service, 'deploy');
+    deployStub = sinon.stub(controller.asgService, 'deploy');
   });
 
   after(async () => {
@@ -457,7 +473,7 @@ describe('DeclarationController', () => {
 
   it(`deploy ${prefix}/applicaitons/{applicationId}/declarations/{declarationId}/deploy: deploy as3 json with trusted proxy: 422`, async () => {
     ASGShouldResponseWith({
-      '/mgmt/shared/TrustedProxy': StubResponses.trustProxyDeploy422,
+      'POST:/mgmt/shared/TrustedProxy': StubResponses.trustProxyDeploy422,
     });
 
     let application = await givenApplicationData(wafapp);

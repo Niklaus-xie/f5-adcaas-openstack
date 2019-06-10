@@ -1,3 +1,19 @@
+/**
+ * Copyright 2019 F5 Networks, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import {Adc, Application, Declaration} from '.';
 
 export enum patchOP {
@@ -5,6 +21,7 @@ export enum patchOP {
   Replace,
   Remove,
 }
+
 export class AS3Declaration {
   [key: string]: undefined | string | number | boolean | object;
 }
@@ -12,6 +29,7 @@ export class AS3Declaration {
 export function as3Name(id: string) {
   return 'F5_' + id.replace(/-/g, '_');
 }
+
 export class AS3PatchOp {
   op: string = 'add';
   path: string;
@@ -38,6 +56,7 @@ export class AS3PatchOp {
     }
   }
 }
+
 export class AS3PatchReqeust {
   readonly class: string = 'AS3';
   readonly action: string = 'patch';
@@ -64,6 +83,7 @@ export class AS3PatchReqeust {
     this.patchBody.push(new AS3PatchOp(application, operation, declaration));
   }
 }
+
 export class AS3DeployRequest {
   readonly class: string = 'AS3';
   readonly action: 'deploy';

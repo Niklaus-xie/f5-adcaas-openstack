@@ -1,3 +1,19 @@
+/**
+ * Copyright 2019 F5 Networks, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import {
   Count,
   CountSchema,
@@ -30,11 +46,8 @@ import {
   DeclarationRepository,
   AdcRepository,
 } from '../repositories';
-import {AS3Service} from '../services';
+import {ASGService, ASGManager} from '../services';
 import {BaseController, Schema, Response, CollectionResponse} from '.';
-
-const AS3_HOST: string = process.env.AS3_HOST || 'localhost';
-const AS3_PORT: number = Number(process.env.AS3_PORT) || 7443;
 
 const prefix = '/adcaas/v1';
 
@@ -46,7 +59,7 @@ export class ApplicationController extends BaseController {
     public declarationRepository: DeclarationRepository,
     @repository(AdcRepository)
     public adcRepository: AdcRepository,
-    @inject('services.AS3Service') public as3Service: AS3Service,
+    @inject('services.ASGService') public asgService: ASGService,
     //Suppress get injection binding exeption by using {optional: true}
     @inject(RestBindings.Http.CONTEXT, {optional: true})
     protected reqCxt: RequestContext,
@@ -187,7 +200,7 @@ export class ApplicationController extends BaseController {
   async deployById(
     @param(Schema.pathParameter('applicationId', 'Application resource ID'))
     id: string,
-  ): Promise<string> {
+  ): Promise<void> {
     let tenantId = await this.tenantId;
 
     let application = await this.applicationRepository.findById(id, undefined, {
@@ -204,6 +217,9 @@ export class ApplicationController extends BaseController {
       tenantId: tenantId,
     });
 
+    let mgmt = adc.management!;
+    let asgManager = await ASGManager.instanlize();
+
     let declaration = await this.declarationRepository.findById(
       application.defaultDeclarationId,
       undefined,
@@ -213,9 +229,8 @@ export class ApplicationController extends BaseController {
     let operation = patchOP.Replace;
     let req = new AS3PatchReqeust(adc, application, operation, declaration);
 
-    let res: string = '';
     try {
-      res = await this.as3Service.deploy(AS3_HOST, AS3_PORT, req);
+      await asgManager.deploy(mgmt.ipAddress, mgmt.tcpPort, req);
     } catch (error) {
       /*We check the return message from BIGIP. If the error value mesage is
     "path does not exisst",which means the bigip does not contain the tenant
@@ -229,12 +244,13 @@ export class ApplicationController extends BaseController {
       ) {
         /*Turn to Deploy method */
         let newReq = new AS3DeployRequest(adc, application, declaration);
-        res = await this.as3Service.deploy(AS3_HOST, AS3_PORT, newReq);
-      } else {
-        res = error;
+        await asgManager.deploy(
+          mgmt.ipAddress,
+          mgmt.tcpPort,
+          newReq.declaration,
+        );
       }
     }
-    return res;
   }
 
   @post(prefix + '/applications/{applicationId}/cleanup', {
@@ -246,7 +262,7 @@ export class ApplicationController extends BaseController {
   async cleanupById(
     @param(Schema.pathParameter('applicationId', 'Application resource ID'))
     id: string,
-  ): Promise<string> {
+  ): Promise<void> {
     let tenantId = await this.tenantId;
 
     let application = await this.applicationRepository.findById(id, undefined, {
@@ -262,8 +278,11 @@ export class ApplicationController extends BaseController {
       tenantId: tenantId,
     });
 
+    let mgmt = adc.management!;
+    let asgManager = await ASGManager.instanlize();
+
     let operation = patchOP.Remove;
     let req = new AS3PatchReqeust(adc, application, operation);
-    return await this.as3Service.deploy(AS3_HOST, AS3_PORT, req);
+    await asgManager.deploy(mgmt.ipAddress, mgmt.tcpPort, req);
   }
 }
