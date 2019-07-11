@@ -768,7 +768,7 @@ export class AdcController extends BaseController {
   private async doInstalling(adc: Adc): Promise<void> {
     try {
       this.logger.debug('start to install do');
-      //await this.serialize(adc, { status: AdcState.DOINSTALLING });
+      await this.serialize(adc, {status: AdcState.DOINSTALLING});
       // check if do is already installed.
       let cnct = adc.management.connection!;
       let bigipMgr = await BigIpManager.instanlize({
