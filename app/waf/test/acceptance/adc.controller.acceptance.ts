@@ -1279,9 +1279,14 @@ describe('AdcController test', () => {
     };
 
     //TODO: This test can not return comparing failure.
-    await checkAndWait(checkStatus, 50, [], 5).then(() => {
-      expect(true).true();
-    });
+    await checkAndWait(checkStatus, 50, [], 5).then(
+      () => {
+        expect(true).true();
+      },
+      () => {
+        expect(false).false();
+      },
+    );
   });
 
   it(
@@ -1356,9 +1361,14 @@ describe('AdcController test', () => {
       };
 
       //TODO: This test can not return comparing failure.
-      await checkAndWait(checkStatus, 50, [], 5).then(() => {
-        expect(true).true();
-      });
+      await checkAndWait(checkStatus, 50, [], 5).then(
+        () => {
+          expect(true).true();
+        },
+        () => {
+          expect(false).false();
+        },
+      );
     },
   );
 
@@ -1386,9 +1396,14 @@ describe('AdcController test', () => {
       return resp.body.adc.status === 'RECLAIMED';
     };
 
-    await checkAndWait(checkStatus, 50, [], 5).then(() => {
-      expect(true).true();
-    });
+    await checkAndWait(checkStatus, 50, [], 5).then(
+      () => {
+        expect(true).true();
+      },
+      () => {
+        expect(false).false();
+      },
+    );
   });
 
   //TODO: the timeout can only be tested through unit test?

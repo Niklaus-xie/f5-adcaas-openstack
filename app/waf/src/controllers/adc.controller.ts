@@ -655,7 +655,9 @@ export class AdcController extends BaseController {
   private async deleteOn(adc: Adc, addon: AddonReqValues): Promise<void> {
     let reclaimFuncs: {[key: string]: Function} = {
       license: async () => {
-        let doMgr = await OnboardingManager.instanlize(this.wafapp);
+        // during deletion, still able to get the connection info from adc?
+        // seems not. then seems not able to use the DO from the VE?
+        let doMgr = await OnboardingManager.instanlize(adc, this.wafapp);
         let doBody = await doMgr.assembleDo(
           adc,
           Object.assign(addon, {onboarding: false}),
@@ -809,7 +811,7 @@ export class AdcController extends BaseController {
       this.logger.debug('start to do onbarding');
       await this.serialize(adc, {status: AdcState.ONBOARDING});
 
-      let doMgr = await OnboardingManager.instanlize(this.wafapp);
+      let doMgr = await OnboardingManager.instanlize(adc, this.wafapp);
       let doBody = await doMgr.assembleDo(
         adc,
         Object.assign(addon, {onboarding: true}),

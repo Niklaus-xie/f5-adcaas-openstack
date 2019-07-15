@@ -63,14 +63,20 @@ export class OnboardingManager {
   };
 
   static async instanlize(
+    adc: Adc,
     app: RestApplication,
     config: object = {},
   ): Promise<OnboardingManager> {
     let doS = await new DOServiceProvider().value();
-    return new OnboardingManager(doS, app, config);
+    return new OnboardingManager(adc, doS, app, config);
   }
 
-  constructor(doS: DOService, app: RestApplication, config: object) {
+  constructor(adc: Adc, doS: DOService, app: RestApplication, config: object) {
+    let cnct = adc.management.connection!;
+    let ipAddr = cnct.ipAddress;
+    let port = cnct.tcpPort;
+    let endpointUrl = `https://${ipAddr}:${port}`;
+
     this.doService = doS;
     this.application = app;
 
@@ -91,7 +97,7 @@ export class OnboardingManager {
       );
 
     this.config = {
-      endpoint: process.env.DO_ENDPOINT || 'https://localhost:9443',
+      endpoint: endpointUrl || 'https://localhost:9443',
       async: true,
       timeout: 900, // from onboarding prompt: should be <= 900
       licPool: {
