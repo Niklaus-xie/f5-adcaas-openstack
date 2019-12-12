@@ -1,3 +1,7 @@
+env:
+  global:
+  - DIST_REPO="dist"
+
 language: node_js
 
 node_js:
@@ -8,74 +12,22 @@ services:
 
 jobs:
   include:
-    - stage: test-app-waf
-      install:
-        - npm --prefix app/waf install
-      before_script:
-        - export PG_HOST=localhost
-      script:
-        - npm --prefix app/waf test
-        - npm --prefix app/waf run coverage
-        - npm --prefix app/waf run coveralls
-      deploy:
-        provider: script
-        on:
-          branch: master
-        skip_cleanup: true
-        script:
-          - scripts/publish_api_ref.sh
-    - stage: fvt
-      if: TRAVIS_EVENT_TYPE = cron 
-      before_script:
-        - pushd test/vpn
-        - ./vpn_install.sh
-        - ./vpn_connect.sh
-        - popd 
-      script:
-        - pushd test/Auto
-        - export name=`openssl rand -base64 8`
-        - ./auto_test.sh 
-      after_success:
-        - ./auto_clean.sh 
     - stage: publish-image-and-docs
-      language: python
-      sudo: required
-      before_install:
-        - docker pull f5devcentral/containthedocs:latest
-      install:
-        - pip install awscli --upgrade
-      script:
-        # Rebuild document
-        - pushd docs
-        - ./docker-docs.sh ./test-docs.sh
-        - popd
       deploy:
-      # Deploy image to Docker Hub
-      - provider: script
-        script: scripts/publish_image.sh
+      - provider: releases
+        api_key:
+          secure: AVWbis8wwDwwW3xHKgdtZvpQBMkZS3YxKsBajdwv4jtVO+Kb15kyMDuekN1I48gugWHQdwECYTqmdzsTdzS3V1yvnATSe9kTIA/ev6w6nQtoLNQ2kSYt/t9UH1CAL9rxD68HKyJ80rtacPY8KF33R7e6vwM85Wi7EC4rJFSDrslY5jTVOlPmM3jdpo/R68uP6p+68hQLz1lzu9WeMPQf8DVBnftxynN2B29gu+MskHYC78A+gcuvcYIGFSlvtG6K4G2Ys+35fQTNLgwMz1sAZcTO4J+UUkQRvB7RvKHtNRCZwduMmLslus4luGA7pN4FER+vzn5pnRLlcCo+CQeFxINtS4C+T9NqMyfaGBwG7KFGZEqU5vEiI0rEUH3NSfwhLm5bVXHXY9Fp2RMPb5yp1DBPv4e41Tf/BKzQzqd1+LetAmvS2MYWoyzPlUfIM+J3nQJWn7VzrEApAhe8nN1CpfK5VpAkoaP/WsfYifhactsu5DScKemwqcIM1xk5iM9wgP/YcGiZOTTbl3MIftAYE4kxKkWF5s+sQlt4TyGH2HGan6inpCu3Byux5txrEJVBIb2KZiDEUSOyNg/I94jJY/7y+A3e6wMZQ8W5NelsQksoGqdRL609v7B6x5V53cODXadowpjPlNFYxijmUQt6jTm0VeIzgjIsrymCJjo29CQ=
+        script:
+          - scripts/build_dist.sh
+          - tar cvzf abc.tar.gz dist
+          - cp abc.tar.gz dist/
+        file:
+          - abc.tar.gz
+        skip_cleanup: true
+        overwrite: true
         on:
+          repo: Niklaus-xie/f5-adcaas-openstack
           tags: true
-      # DEPLOY DOCS TO STAGING
-      - provider: s3
-        skip_cleanup: true
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: $AWS_S3_STAGING
-        local_dir: docs/_build/html
-        upload_dir: $AWS_DIR
-        on:
-          branch: master
-          repo: F5Networks/f5-adcaas-openstack
-      # DEPLOY DOCS TO PRODUCTION
-      - provider: s3
-        skip_cleanup: true
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: $AWS_S3_BUCKET
-        local_dir: docs/_build/html
-        upload_dir: $AWS_DIR
-        on:
-          branch: master
-          repo: F5Networks/f5-adcaas-openstack
-      after_deploy:
-         - aws cloudfront create-invalidation --distribution-id $AWS_DIST_ID --paths $AWS_DIR
+
+
+
